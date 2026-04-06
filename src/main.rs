@@ -22,8 +22,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut selected_blobs = BTreeSet::new();
 
+    let (mut bc, mut oc) = (0, 0);
+    eprintln!("Blobs found: 0");
+    eprintln!("Over cutoff: 0");
+
     let repo = Repository::discover(&args.repo)?;
     repo.odb()?.foreach(|oid| {
+        bc += 1;
+        eprint!("\x1B[1A\x1B[14G{oc}\x1B[1A\x1B[14G{bc}\x1B[2B");
+
         match repo.find_blob(*oid) {
             Err(err) if err.code() == ErrorCode::NotFound && err.class() == ErrorClass::Invalid => {
             }
@@ -34,6 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let size = blob.size();
                 if size >= args.cutoff {
                     selected_blobs.insert((size, *oid));
+                    oc += 1;
                 }
             }
         }
