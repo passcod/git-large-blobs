@@ -50,13 +50,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
 
     eprintln!(
-        "Found {} blobs above {} bytes, resolving to objects...",
+        "\nFound {} blobs above {} bytes, resolving to objects...",
         selected_blobs.len(),
         args.cutoff
     );
 
     println!(
-        "size\t{blob:<40}\t{commit:<40}\tfilename",
+        "{size:<15}\t{blob:<40}\t{commit:<40}\tfilename",
+        size = "size",
         blob = "blob",
         commit = "commit",
     );
