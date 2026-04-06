@@ -3,13 +3,13 @@ use std::{borrow::Cow, collections::BTreeSet, path::PathBuf};
 use clap::Parser;
 use git2::{ErrorClass, ErrorCode, Repository, TreeWalkMode, TreeWalkResult};
 
-/// Finds all blobs within the repo larger than a cutoff (default 1KB).
+/// Finds all blobs within the repo larger than a cutoff (default 1MB).
 ///
 /// Looks at all branches, does not consider "orphaned" objects.
 #[derive(Debug, Parser)]
 struct Args {
-    /// Stop looking for blobs smaller than this in bytes
-    #[arg(long, default_value_t = 1024)]
+    /// Look for blobs at least this size in bytes
+    #[arg(long, default_value_t = 1024 * 1024)]
     cutoff: usize,
 
     /// Path to the git repository
