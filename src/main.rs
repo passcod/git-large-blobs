@@ -15,6 +15,10 @@ struct Args {
     /// Path to the git repository
     #[arg(long, default_value = ".")]
     repo: PathBuf,
+
+    /// List all commits that contain the blob instead of just the first found
+    #[arg(long)]
+    all_commits: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -64,7 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // iterate largest first
     let mut it = selected_blobs.iter();
-    while let Some((size, blob)) = it.next_back() {
+    'blob: while let Some((size, blob)) = it.next_back() {
         let mut walk = repo.revwalk()?;
         walk.push_glob("refs/*")?; // all branches
         for commit_oid in walk {
@@ -73,21 +77,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 continue;
             };
             let Ok(tree) = commit.tree() else { continue };
-            let _ = tree.walk(TreeWalkMode::PreOrder, |_, entry| {
+            let Err(err) = tree.walk(TreeWalkMode::PreOrder, |_, entry| {
                 if entry.id() == *blob {
                     println!(
-                        "{size}\t{blob}\t{commit}\t{filename}",
+                        "{size:<15}\t{blob}\t{commit}\t{filename}",
                         commit = commit_oid,
                         filename = entry
                             .name()
                             .map(Cow::Borrowed)
                             .unwrap_or_else(|| String::from_utf8_lossy(entry.name_bytes())),
                     );
+
                     TreeWalkResult::Abort
                 } else {
                     TreeWalkResult::Ok
                 }
-            });
+            }) else { continue };
+
+            if err.raw_code() == -7 && !args.all_commits {
+                // one matching commit found, move on
+                continue 'blob;
+            }
         }
     }
 
